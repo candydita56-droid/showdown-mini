@@ -3,141 +3,77 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SHOWDOWN MINI | BY @tr4s</title>
+    <title>AXON | VERIFIED FEEDS</title>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
     <style>
-        body {
-            background-color: #0d0d0d;
-            color: #00ff41;
-            font-family: 'Courier New', Courier, monospace;
-            padding: 20px;
-            margin: 0;
+        body { background-color: #050505; color: #00ff41; font-family: 'Courier New', monospace; padding: 20px; }
+        h1 { text-align: center; border-bottom: 1px solid #00ff41; padding-bottom: 10px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 15px; margin-top: 20px;}
+        .card { 
+            border: 1px solid #333; background: #0a0a0a; padding: 15px; 
+            box-shadow: 0 0 5px #00ff41; transition: 0.2s; word-wrap: break-word;
         }
-        h1 {
-            text-align: center;
-            border-bottom: 2px solid #00ff41;
-            padding-bottom: 10px;
-            letter-spacing: 5px;
+        .card:hover { transform: scale(1.02); border-color: #00ff41; }
+        .link { 
+            font-size: 1.1em; color: #fff; text-decoration: none; font-weight: bold; display: block; margin-bottom: 5px;
         }
-        #stats {
-            text-align: center;
-            margin-bottom: 20px;
-            color: #fff;
-            font-size: 0.9em;
-        }
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 15px;
-        }
-        .card {
-            border: 1px solid #00ff41;
-            padding: 15px;
-            background: #111;
-            box-shadow: 0 0 5px #00ff41;
-            transition: transform 0.1s;
-        }
-        .card:hover {
-            transform: scale(1.02);
-            background: #1a1a1a;
-        }
-        .ip-link {
-            font-size: 1.4em;
-            font-weight: bold;
-            color: #00ff41;
-            text-decoration: none;
-            display: block;
-            margin-bottom: 5px;
-        }
-        .ip-link:hover {
-            text-decoration: underline;
-            color: #fff;
-            cursor: pointer;
-        }
-        .tag {
-            background: #003300;
-            color: #fff;
-            padding: 2px 6px;
-            font-size: 0.8em;
-            border-radius: 3px;
-            text-transform: uppercase;
-        }
-        .banner {
-            font-size: 0.9em;
-            color: #bbb;
-            margin-top: 5px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        .timestamp {
-            font-size: 0.7em;
-            color: #666;
-            margin-top: 10px;
-            display: block;
-        }
+        .link:hover { text-decoration: underline; color: #00ff41; }
+        .tag { background: #004400; color: #fff; padding: 2px 5px; font-size: 0.7em; text-transform: uppercase; }
+        .path { color: #666; font-size: 0.8em; margin-top: 5px; }
     </style>
 </head>
 <body>
-
-    <h1>AXON SEARCH ENGINE</h1>
-    <div id="stats">LIVE FEED: MONITORING GLOBAL TRAFFIC...</div>
-    <div id="device-grid" class="grid"></div>
+    <h1>AXON: VERIFIED BACKEND SCANNER</h1>
+    <div id="status">WAITING FOR RESULTS...</div>
+    <div id="grid" class="grid"></div>
 
     <script>
-        // --- PASTE YOUR FIREBASE CONFIG HERE ---
-        // (If you lost it, go to Project Settings -> General -> "SDK setup and configuration" -> "CDN")
+        // --- PASTE FIREBASE CONFIG HERE ---
         const firebaseConfig = {
-            apiKey: "YOUR_API_KEY_HERE",
+            apiKey: "YOUR_API_KEY",
             authDomain: "showdown-mini.firebaseapp.com",
             projectId: "showdown-mini",
             storageBucket: "showdown-mini.appspot.com",
             messagingSenderId: "YOUR_SENDER_ID",
             appId: "YOUR_APP_ID"
         };
-        // ---------------------------------------
+        // ----------------------------------
 
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
+        const grid = document.getElementById('grid');
 
-        const grid = document.getElementById('device-grid');
-
-        // Listen for new devices in real-time
         db.collection("devices").orderBy("timestamp", "desc").limit(50).onSnapshot((snapshot) => {
-            grid.innerHTML = ""; // Clear grid to prevent duplicates on refresh
-            
+            grid.innerHTML = "";
             snapshot.forEach((doc) => {
                 const data = doc.data();
-                const card = document.createElement("div");
-                card.className = "card";
-
-                // Determine Protocol (http, https, rtsp)
-                let protocol = "http://";
-                if (data.port === 443) protocol = "https://";
-                if (data.port === 554) protocol = "rtsp://";
                 
-                const url = `${protocol}${data.ip}:${data.port}`;
-
-                // Format timestamp
-                let timeString = "Just now";
-                if (data.timestamp) {
-                    const date = data.timestamp.toDate();
-                    timeString = date.toLocaleTimeString();
+                // FORCE THE PORT INTO THE URL
+                let protocol = "http://";
+                // If the path ends in .sdp or we tagged it RTSP, use rtsp://
+                if (data.path && (data.path.includes('.sdp') || data.tag === 'RTSP')) {
+                    protocol = "rtsp://";
                 }
 
+                // Construct full URL: http://1.2.3.4:8080/video.cgi
+                const fullUrl = `${protocol}${data.ip}:${data.port}${data.path}`;
+
+                const card = document.createElement("div");
+                card.className = "card";
                 card.innerHTML = `
-                    <a href="${url}" target="_blank" class="ip-link">
+                    <a href="${fullUrl}" target="_blank" class="link">
                         ${data.ip}:${data.port} ↗
                     </a>
-                    <div>
-                        <span class="tag">${data.tag || 'unknown'}</span>
+                    <span class="tag">${data.tag}</span>
+                    <div class="path">Backend: ${data.path}</div>
+                    <div style="font-size:0.7em; color:#444; margin-top:10px;">
+                        ${new Date(data.timestamp.toDate()).toLocaleTimeString()}
                     </div>
-                    <div class="banner">${data.banner || 'No Response'}</div>
-                    <span class="timestamp">Detected: ${timeString}</span>
                 `;
                 grid.appendChild(card);
             });
+            document.getElementById('status').innerText = `LIVE: ${snapshot.size} VERIFIED FEEDS FOUND`;
         });
     </script>
 </body>
