@@ -3,33 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AXON | VERIFIED FEEDS</title>
+    <title>shittah by @tr4s | LIVE FEEDS</title>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
     <style>
         body { background-color: #050505; color: #00ff41; font-family: 'Courier New', monospace; padding: 20px; }
-        h1 { text-align: center; border-bottom: 1px solid #00ff41; padding-bottom: 10px; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 15px; margin-top: 20px;}
+        h1 { text-align: center; border-bottom: 1px solid #00ff41; padding-bottom: 10px; letter-spacing: 3px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 15px; margin-top: 20px;}
         .card { 
             border: 1px solid #333; background: #0a0a0a; padding: 15px; 
-            box-shadow: 0 0 5px #00ff41; transition: 0.2s; word-wrap: break-word;
+            box-shadow: 0 0 5px #003300; transition: 0.2s;
         }
-        .card:hover { transform: scale(1.02); border-color: #00ff41; }
+        .card:hover { transform: scale(1.02); border-color: #00ff41; box-shadow: 0 0 10px #00ff41; }
         .link { 
-            font-size: 1.1em; color: #fff; text-decoration: none; font-weight: bold; display: block; margin-bottom: 5px;
+            font-size: 1.2em; color: #fff; text-decoration: none; font-weight: bold; display: block; margin-bottom: 5px;
         }
         .link:hover { text-decoration: underline; color: #00ff41; }
-        .tag { background: #004400; color: #fff; padding: 2px 5px; font-size: 0.7em; text-transform: uppercase; }
-        .path { color: #666; font-size: 0.8em; margin-top: 5px; }
+        .tag { background: #004400; color: #fff; padding: 2px 6px; font-size: 0.8em; border-radius: 3px; text-transform: uppercase; }
+        .path { color: #666; font-size: 0.7em; margin-top: 5px; }
     </style>
 </head>
 <body>
-    <h1>AXON: VERIFIED BACKEND SCANNER</h1>
-    <div id="status">WAITING FOR RESULTS...</div>
+    <h1>shittah: LIVE FEED INDEX</h1>
+    <div id="status" style="text-align:center; color:#666;">Waiting for streams...</div>
     <div id="grid" class="grid"></div>
 
     <script>
-        // --- PASTE FIREBASE CONFIG HERE ---
+        // --- PASTE YOUR FIREBASE CONFIG HERE ---
         const firebaseConfig = {
             apiKey: "YOUR_API_KEY",
             authDomain: "showdown-mini.firebaseapp.com",
@@ -38,42 +38,37 @@
             messagingSenderId: "YOUR_SENDER_ID",
             appId: "YOUR_APP_ID"
         };
-        // ----------------------------------
+        // ---------------------------------------
 
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
         const grid = document.getElementById('grid');
 
-        db.collection("devices").orderBy("timestamp", "desc").limit(50).onSnapshot((snapshot) => {
+        db.collection("devices").orderBy("timestamp", "desc").limit(100).onSnapshot((snapshot) => {
             grid.innerHTML = "";
             snapshot.forEach((doc) => {
                 const data = doc.data();
                 
-                // FORCE THE PORT INTO THE URL
-                let protocol = "http://";
-                // If the path ends in .sdp or we tagged it RTSP, use rtsp://
-                if (data.path && (data.path.includes('.sdp') || data.tag === 'RTSP')) {
-                    protocol = "rtsp://";
-                }
-
-                // Construct full URL: http://1.2.3.4:8080/video.cgi
-                const fullUrl = `${protocol}${data.ip}:${data.port}${data.path}`;
+                // Construct the full clickable URL
+                // If it's Minecraft, we don't make a clickable link
+                let url = `http://${data.ip}:${data.port}${data.path}`;
+                if (data.tag === 'Minecraft') url = "#"; 
 
                 const card = document.createElement("div");
                 card.className = "card";
                 card.innerHTML = `
-                    <a href="${fullUrl}" target="_blank" class="link">
+                    <a href="${url}" target="_blank" class="link">
                         ${data.ip}:${data.port} ↗
                     </a>
                     <span class="tag">${data.tag}</span>
-                    <div class="path">Backend: ${data.path}</div>
+                    <div class="path">Path: ${data.path || 'Root'}</div>
                     <div style="font-size:0.7em; color:#444; margin-top:10px;">
-                        ${new Date(data.timestamp.toDate()).toLocaleTimeString()}
+                        Found: ${new Date(data.timestamp.toDate()).toLocaleTimeString()}
                     </div>
                 `;
                 grid.appendChild(card);
             });
-            document.getElementById('status').innerText = `LIVE: ${snapshot.size} VERIFIED FEEDS FOUND`;
+            document.getElementById('status').innerText = `ACTIVE FEEDS: ${snapshot.size}`;
         });
     </script>
 </body>
