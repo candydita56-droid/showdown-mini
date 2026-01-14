@@ -2,161 +2,143 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>AXON SEARCH</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SHOWDOWN MINI | BY @tr4s</title>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
     <style>
         body {
-            background-color: #050505;
+            background-color: #0d0d0d;
             color: #00ff41;
-            font-family: 'Consolas', 'Courier New', monospace;
-            margin: 0;
+            font-family: 'Courier New', Courier, monospace;
             padding: 20px;
+            margin: 0;
         }
-        .container { max-width: 900px; margin: 0 auto; }
-        
-        /* Header */
-        h1 { text-align: center; letter-spacing: 5px; text-transform: uppercase; margin-bottom: 5px; }
-        p.subtitle { text-align: center; color: #555; margin-bottom: 30px; font-size: 12px; }
-
-        /* Search Bar */
-        .search-container { display: flex; gap: 10px; margin-bottom: 30px; }
-        input {
-            width: 100%;
+        h1 {
+            text-align: center;
+            border-bottom: 2px solid #00ff41;
+            padding-bottom: 10px;
+            letter-spacing: 5px;
+        }
+        #stats {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #fff;
+            font-size: 0.9em;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 15px;
+        }
+        .card {
+            border: 1px solid #00ff41;
             padding: 15px;
             background: #111;
-            border: 1px solid #333;
+            box-shadow: 0 0 5px #00ff41;
+            transition: transform 0.1s;
+        }
+        .card:hover {
+            transform: scale(1.02);
+            background: #1a1a1a;
+        }
+        .ip-link {
+            font-size: 1.4em;
+            font-weight: bold;
+            color: #00ff41;
+            text-decoration: none;
+            display: block;
+            margin-bottom: 5px;
+        }
+        .ip-link:hover {
+            text-decoration: underline;
             color: #fff;
-            font-family: inherit;
-            font-size: 16px;
+            cursor: pointer;
         }
-        input:focus { outline: none; border-color: #00ff41; }
-
-        /* Results */
-        .result-card {
-            border: 1px solid #222;
-            background: #0a0a0a;
-            padding: 20px;
-            margin-bottom: 15px;
-            position: relative;
+        .tag {
+            background: #003300;
+            color: #fff;
+            padding: 2px 6px;
+            font-size: 0.8em;
+            border-radius: 3px;
+            text-transform: uppercase;
         }
-        .result-card:hover { border-color: #00ff41; box-shadow: 0 0 10px rgba(0, 255, 65, 0.1); }
-        
-        .ip-header { font-size: 18px; color: #fff; font-weight: bold; margin-bottom: 10px; }
-        .port-tag {
-            background: #00ff41; color: #000; padding: 2px 6px; 
-            font-size: 12px; font-weight: bold; margin-left: 10px;
+        .banner {
+            font-size: 0.9em;
+            color: #bbb;
+            margin-top: 5px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
-        
-        .banner-box {
-            background: #000;
-            border: 1px solid #333;
-            padding: 10px;
-            color: #aaa;
-            font-size: 13px;
-            white-space: pre-wrap; /* Keeps formatting */
-            max-height: 150px;
-            overflow-y: auto;
+        .timestamp {
+            font-size: 0.7em;
+            color: #666;
+            margin-top: 10px;
+            display: block;
         }
-        
-        .meta { color: #444; font-size: 11px; margin-top: 5px; text-align: right; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h1>AXON</h1>
-    <p class="subtitle">GLOBAL NETWORK INDEX</p>
-    
-    <div class="search-container">
-        <input type="text" id="searchInput" placeholder="Search IP, Port, or Service (e.g. 'Minecraft', 'Apache', '25565')...">
-    </div>
-    
-    <div id="status" style="color:#555; text-align:center; margin-bottom:20px;">Connecting to database...</div>
-    <div id="results"></div>
-</div>
+    <h1>AXON SEARCH ENGINE</h1>
+    <div id="stats">LIVE FEED: MONITORING GLOBAL TRAFFIC...</div>
+    <div id="device-grid" class="grid"></div>
 
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
-  import { getFirestore, collection, query, orderBy, limit, onSnapshot } 
-    from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
+    <script>
+        // --- PASTE YOUR FIREBASE CONFIG HERE ---
+        // (If you lost it, go to Project Settings -> General -> "SDK setup and configuration" -> "CDN")
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY_HERE",
+            authDomain: "showdown-mini.firebaseapp.com",
+            projectId: "showdown-mini",
+            storageBucket: "showdown-mini.appspot.com",
+            messagingSenderId: "YOUR_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
+        // ---------------------------------------
 
-  // --- YOUR CONFIGURATION ---
-  const firebaseConfig = {
-    apiKey: "AIzaSyAbCA5jYXngNfD9lUBPkEZ-O7C2tz6IpSY",
-    authDomain: "showdown-mini.firebaseapp.com",
-    projectId: "showdown-mini",
-    storageBucket: "showdown-mini.firebasestorage.app",
-    messagingSenderId: "383304447498",
-    appId: "1:383304447498:web:385d4180bb04a4b31211f3"
-  };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
 
-  const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
+        const grid = document.getElementById('device-grid');
 
-  const resultsDiv = document.getElementById("results");
-  const statusDiv = document.getElementById("status");
-  
-  let allDevices = [];
+        // Listen for new devices in real-time
+        db.collection("devices").orderBy("timestamp", "desc").limit(50).onSnapshot((snapshot) => {
+            grid.innerHTML = ""; // Clear grid to prevent duplicates on refresh
+            
+            snapshot.forEach((doc) => {
+                const data = doc.data();
+                const card = document.createElement("div");
+                card.className = "card";
 
-  // Listen to Database in REALTIME
-  const q = query(collection(db, "devices"), orderBy("timestamp", "desc"), limit(50));
-  
-  onSnapshot(q, (snapshot) => {
-    allDevices = [];
-    snapshot.forEach((doc) => {
-        allDevices.push(doc.data());
-    });
-    statusDiv.innerText = `${allDevices.length} devices indexed. Live.`;
-    render(allDevices);
-  });
+                // Determine Protocol (http, https, rtsp)
+                let protocol = "http://";
+                if (data.port === 443) protocol = "https://";
+                if (data.port === 554) protocol = "rtsp://";
+                
+                const url = `${protocol}${data.ip}:${data.port}`;
 
-  function render(data) {
-    resultsDiv.innerHTML = "";
-    
-    if (data.length === 0) {
-        resultsDiv.innerHTML = "<div style='text-align:center; color:#444'>Waiting for scanner data...</div>";
-        return;
-    }
+                // Format timestamp
+                let timeString = "Just now";
+                if (data.timestamp) {
+                    const date = data.timestamp.toDate();
+                    timeString = date.toLocaleTimeString();
+                }
 
-    data.forEach(device => {
-        const div = document.createElement("div");
-        div.className = "result-card";
-        
-        let dateStr = "Just now";
-        if(device.timestamp) {
-             dateStr = new Date(device.timestamp.seconds * 1000).toLocaleString();
-        }
-
-        div.innerHTML = `
-            <div class="ip-header">
-                ${device.ip} <span class="port-tag">${device.port}</span>
-            </div>
-            <div class="banner-box">${escapeHtml(device.banner)}</div>
-            <div class="meta">Indexed: ${dateStr}</div>
-        `;
-        resultsDiv.appendChild(div);
-    });
-  }
-
-  // Search Logic
-  document.getElementById('searchInput').addEventListener('keyup', (e) => {
-    const term = e.target.value.toLowerCase();
-    if(term === "") {
-        render(allDevices);
-        return;
-    }
-    const filtered = allDevices.filter(d => 
-        d.ip.includes(term) || 
-        d.port.toString().includes(term) || 
-        d.banner.toLowerCase().includes(term)
-    );
-    render(filtered);
-  });
-
-  function escapeHtml(text) {
-    if (!text) return "";
-    return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-  }
-</script>
-
+                card.innerHTML = `
+                    <a href="${url}" target="_blank" class="ip-link">
+                        ${data.ip}:${data.port} ↗
+                    </a>
+                    <div>
+                        <span class="tag">${data.tag || 'unknown'}</span>
+                    </div>
+                    <div class="banner">${data.banner || 'No Response'}</div>
+                    <span class="timestamp">Detected: ${timeString}</span>
+                `;
+                grid.appendChild(card);
+            });
+        });
+    </script>
 </body>
 </html>
